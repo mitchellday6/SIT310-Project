@@ -139,7 +139,7 @@ void processCommand()
     if (instruction == "TURNL"){setLeft(data.toInt());}
     if (instruction == "TURNR"){setRight(data.toInt());}
     if(instruction == "STOPA"){
-      curState == STOP;
+      curState = STOP;
       stop();
     }
     newData = false;
