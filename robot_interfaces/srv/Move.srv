@@ -1,0 +1,6 @@
+string direction
+int16 distance
+
+---
+
+string result
