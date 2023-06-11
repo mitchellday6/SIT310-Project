@@ -1,3 +1,4 @@
+
 // defines pins numbers
 const int echoPinLeft = 5;
 const int trigPinLeft = 6;
@@ -8,16 +9,17 @@ const int trigPinFront = 12;
 const int echoPinRight = 2;
 const int trigPinRight = 4;
 
-//distance at which robot should stop from object in cms
-const int safeDistance = 15;
 
-// defines variables
-long duration;
+//for ultrasonic sensor distance control
+const int safeDistance = 15;  //distance at which robot should stop from object in cms
+long duration;                
 int distance;
 bool isObject = false;
-int speed = 1;   // speed of vehicle cm/sec
-int angVel = 1000;  //turning speed of vehicle deg/s
-unsigned long endTime = 0;  //this time using millis() that the current movement will stop
+
+
+unsigned long speed = 10;   //speed of vehicle cm/sec
+unsigned long angVel = 60;  //turning speed of vehicle deg/s
+unsigned long endTime = 0;  //use to stop the current state/movment in the future
 
 int motorright = 9;
 int motorrightdir = 7;
@@ -25,16 +27,14 @@ int motorleft = 10;
 int motorleftdir = 8;
 
 // For serial receive.
-const byte numChars = 11;
+const byte numChars = 11;     //number of characters in command string sent from server
 char receivedChars[numChars]; // an array to store the received data
 String received;              // The data as a string
 boolean newData = false;
 
-
-//list of possible states the vehicle could be in
-enum STATES {FORWARD, BACKWARD, LEFT, RIGHT, STOP};
-//current state of the vehicle
-STATES curState = STOP;
+//for state control
+enum STATES {FORWARD, BACKWARD, LEFT, RIGHT, STOP};   //list of possible states the vehicle could be in
+STATES curState = STOP;                               //current state of the vehicle
 
 void setup()
 {
@@ -92,7 +92,6 @@ void loop()
 
   recvWithEndMarker();
   processCommand();
-
   checkTime();
 }
 
@@ -116,9 +115,12 @@ int ultrasonic(int echoPin, int trigPin)
   return distance;
 }
 
+
+//checks if the set endtime has been reached
+//if so it stops the vehicle and turns its state back to stop
 void checkTime(){
-//  if(curState == STOP) return;
-  if(millis() >= endTime){
+  if(curState == STOP) return;
+  if(endTime < millis()){
     curState = STOP;
     stop();
   }
@@ -130,20 +132,12 @@ void processCommand()
   {
     String instruction = received.substring(0, 5);
     String data = received.substring(6, 10);
-    Serial.print(instruction + " received\n");
-    delay(100); // wait for 1/10th of a second.
-    if (instruction == "MOVEF"){
-      setForward(data.toInt());
-    }
-    if (instruction == "MOVEB"){
-      setBackward(data.toInt());
-    }
-    if (instruction == "TURNL"){
-      setLeft(data.toInt());
-    }
-    if (instruction == "TURNR"){
-      setRight(data.toInt());
-    }
+    Serial.println(instruction+data);
+    
+    if (instruction == "MOVEF"){setForward(data.toInt());}
+    if (instruction == "MOVEB"){setBackward(data.toInt());}
+    if (instruction == "TURNL"){setLeft(data.toInt());}
+    if (instruction == "TURNR"){setRight(data.toInt());}
     if(instruction == "STOPA"){
       curState == STOP;
       stop();
@@ -185,29 +179,29 @@ void recvWithEndMarker()
 //set the current state of the vehicle
 
 void setForward(int dist){
-  unsigned long time = distance/speed;
-  endTime = millis()+(time*1000);
+  unsigned long time = ((unsigned long)dist/speed)*1000;
+  endTime = millis()+time;
   curState = FORWARD;
   forward();
 }
 
 void setBackward(int dist){
-  unsigned long time = distance/speed;
-  endTime = millis()+(time*1000);
+  unsigned long time = ((unsigned long)dist/speed)*1000;
+  endTime = millis()+time;
   curState = BACKWARD;
   backward();
 }
 
 void setLeft(int deg){
-  unsigned long time = deg/angVel;
-  endTime = millis()+(time*1000);
+  unsigned long time = ((unsigned long)deg/angVel)*1000;
+  endTime = millis()+time;
   curState = LEFT;
   turnLeft();
 }
 
 void setRight(int deg){
-  unsigned long time = deg/angVel;
-  endTime = millis()+(time*1000);
+  unsigned long time = ((unsigned long)deg/angVel)*1000;
+  endTime = millis()+time;
   curState = RIGHT;
   turnRight();
 }
@@ -216,7 +210,6 @@ void setRight(int deg){
 // direction is controlled by the digital pin 7 and 8.
 //  HIGH is backward, LOW is forward
 //  Pins 9 and 10 control speed.
-//  Length of time controls the distance
 
 void forward()
 {
