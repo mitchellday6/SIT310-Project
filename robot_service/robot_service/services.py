@@ -46,12 +46,9 @@ class RobotServer(Node):
         
     def send_command(self, msg):
         print("Sending Command: "+ msg)
-        ser = serial.Serial('/dev/ttyACM0', baudrate=9600, timeout=.2)
+        ser = serial.Serial('/dev/ttyACM0', baudrate=9600, timeout=0.5)
         command = msg+'\n'
-        self.get_logger().info(command)
-        print("Sending: " +command)
         ser.write(command.encode())
-        time.sleep(.1)
         reply = ser.readline().decode("utf-8").strip('\n').strip('\r')
         print("From robot:" +reply)
         ser.close()
@@ -79,7 +76,7 @@ class RobotServer(Node):
     def turn_right_callback(self, request, response):
         self.get_logger().info('Incoming request: Turn Right: %d degrees' % (request.deg))
         command = "TURNR:%d" % request.deg
-        command = "TURNR:1000"
+        # command = "TURNR:1000"
         reply = self.send_command(command)
         response.result = "Sent"
         return response
